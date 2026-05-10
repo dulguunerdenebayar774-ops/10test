@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Гүйцэтгэлийн үнэлгээ - Математик</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Математикийн томьёог цэвэрхэн харуулах MathJax сан -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; }
+        .hidden { display: none !important; }
+        .math-text { font-size: 1.1rem; }
+        textarea { resize: vertical; }
+        /* Зураг байхгүй үед гарах орлуулагчийн загвар */
+        .image-placeholder { 
+            background-color: #f9fafb; border: 2px dashed #cbd5e1; color: #64748b; 
+            padding: 2rem; text-align: center; border-radius: 0.5rem; margin: 1rem 0;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <!-- Нэвтрэх хэсэг -->
+    <div id="login-section" class="max-w-md mx-auto bg-white p-8 rounded-xl shadow-lg">
+        <h1 class="text-2xl font-bold mb-6 text-center text-blue-600">Математикийн Гүйцэтгэлийн Үнэлгээ</h1>
+        <div class="mb-4">
+            <label class="block text-gray-700 mb-2 font-semibold">Сурагчийн нэр:</label>
+            <input type="text" id="student-name" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="Овог нэрээ бичнэ үү...">
+        </div>
+        <button onclick="startQuiz()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition">Тест эхлэх (40 мин)</button>
+        <p class="mt-4 text-sm text-gray-500 text-center">Санамж: 15 сонгох тест, 3 бүтээх даалгавартай. Систем А эсвэл Б хувилбарыг санамсаргүй сонгоно.</p>
+    </div>
+
+    <!-- Тест бодох хэсэг -->
+    <div id="quiz-section" class="max-w-4xl mx-auto bg-white p-6 rounded-xl shadow-lg hidden">
+        <div class="flex justify-between items-center mb-6 sticky top-0 bg-white py-3 border-b z-10">
+            <div>
+                <h2 id="display-name" class="font-bold text-gray-800 text-lg"></h2>
+                <p id="display-variant" class="text-blue-600 font-semibold"></p>
+            </div>
+            <div class="flex flex-col items-end">
+                <span class="text-sm text-gray-500">Үлдсэн хугацаа:</span>
+                <div id="timer" class="text-red-600 bg-red-50 px-3 py-1 rounded-md font-bold text-xl">40:00</div>
+            </div>
+        </div>
+
+        <h3 class="text-xl font-bold mb-4 text-gray-700 border-l-4 border-blue-500 pl-3">Нэгдүгээр хэсэг: Сонгох даалгавар</h3>
+        <div id="mcq-container">
+            <!-- Асуултууд энд орж ирнэ -->
+        </div>
+
+        <h3 class="text-xl font-bold mt-10 mb-4 text-gray-700 border-l-4 border-green-500 pl-3">Хоёрдугаар хэсэг: Бүтээх даалгавар</h3>
+        <p class="text-sm text-gray-500 mb-4">Доорх даалгавруудын хариуг бичнэ үү. Багш шалгаж нэмэлт оноо өгнө.</p>
+        <div id="creative-container">
+            <!-- Бүтээх даалгаврууд энд орж ирнэ -->
+        </div>
+
+        <button onclick="confirmFinish()" class="mt-8 w-full bg-green-600 text-white py-4 rounded-lg font-bold text-lg hover:bg-green-700 transition shadow-md">Бодож дууссан (Илгээх)</button>
+    </div>
+
+    <!-- Үр дүнгийн хэсэг -->
+    <div id="result-section" class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-lg hidden">
+        <div class="text-center mb-8 border-b pb-6">
+            <h2 class="text-3xl font-bold mb-4 text-blue-600">Үнэлгээний тайлан</h2>
+            <p id="result-student-name" class="text-xl text-gray-700 mb-2"></p>
+            
+            <div class="bg-blue-50 p-6 rounded-lg inline-block mt-4">
+                <p class="text-gray-600 mb-2">Сонгох тестийн оноо:</p>
+                <p id="final-score" class="text-5xl font-extrabold text-blue-700"></p>
+                <p id="score-details" class="text-lg mt-2 font-medium"></p>
+            </div>
+        </div>
+
+        <h3 class="text-2xl font-bold mb-4 text-gray-800">Бүтээх даалгаврын хариу</h3>
+        <p class="text-gray-600 mb-6">Бүтээх даалгаврыг багш дүгнэж эцсийн оноог гаргана. Та өөрийн бичсэн хариуг зөв бодолттой харьцуулан харна уу.</p>
+        <div id="creative-results-container" class="space-y-6 mb-8">
+            <!-- Бүтээх даалгаврын хариунууд энд орж ирнэ -->
+        </div>
+
+        <div class="text-center mt-8 pt-6 border-t">
+            <button onclick="location.reload()" class="bg-gray-800 text-white px-8 py-3 rounded-lg font-bold hover:bg-gray-900 transition">Эхлэл рүү буцах</button>
+        </div>
+    </div>
+
+    <script>
+        // Зураг дуудаж чадаагүй үед гарах функц
+        function imageError(imgElement, imageName) {
+            imgElement.outerHTML = `<div class='image-placeholder'>
+                <p class='font-bold text-gray-700'>Зураг олдсонгүй</p>
+                <p class='text-sm mt-1'>Та <b>${imageName}</b> нэртэй зургийг <b>images</b> хавтас дотор хийнэ үү.</p>
+            </div>`;
+        }
+
+        // Асуултуудын өгөгдлийн сан (MathJax буюу \( \) ашиглаж фонтыг янзалсан)
+const quizData = {
+A: {
+mcq: [
+{ q: "1. Хэрэв \\( \\cos 50^\\circ = 0.64 \\) бол \\( \\cos 130^\\circ = ? \\)", options: ["\\( 1/2 \\)", "\\( 0.64 \\)", "\\( -0.64 \\)", "\\( -0.77 \\)"], correct: 2 },
+
+{ q: "2. \\( 350 \\times 2000 \\) үржвэрийг стандарт дүрсэд оруулаарай.", options: ["\\( 70 \\times 10^4 \\)", "\\( 35 \\times 10^5 \\)", "\\( 7 \\times 10^5 \\)", "\\( 0.7 \\times 10^6 \\)"], correct: 2 },
+
+{ q: "3. \\( \\sqrt[3]{-8x^3y^7} = \\)", options: ["\\( 2xy\\sqrt[3]{y} \\)", "\\( -2xy\\sqrt[3]{y} \\)", "\\( -2xy^2\\sqrt{y} \\)", "\\( -2xy^2\\sqrt[3]{y} \\)"], correct: 3 },
+
+{
+q: "4. Зурагт үзүүлсэн цэгийн олонлог аль тэнцэтгэл бишийн шийд болох вэ?",
+image: "images/q4_a.jpg",
+options: ["\\( y > 2x+1 \\)", "\\( y < 2x \\)", "\\( y \\ge 2x \\)", "\\( y \\le 2x \\)"],
+correct: 0
+},
+
+{ q: "5. 10а ангийн сурагчдын 60% эрэгтэй, 10б ангийн сурагчдын 70% эрэгтэй байв. Анги бүрээс нэг, нэг сурагч таамгаар сонгоход хоёул эмэгтэй байх магадлалыг ол.", options: ["0.42", "0.13", "0.12", "0.7"], correct: 2 },
+
+{ q: "6. 0; 0; 2; 2; 2; 3; 3; 3; 3; 4; 5; 5; 6; 6; 6 эрэмблэгдсэн өгөгдлийн квартил хоорондын далайцыг ол.", options: ["3", "6", "4", "2"], correct: 2 },
+
+{
+q: "7. Дараах зургаас мэдэгдэхгүй байгаа өнцгийг олоорой.",
+image: "images/q7_a.jpg",
+options: ["20", "25", "12.5", "10"],
+correct: 1
+},
+
+{
+q: "8. D(3,-1) цэгийг координатын эхийн хувьд цагийн зүүний дагуу 90° эргүүлэхэд D₁(-1,-3) цэгт шилжив. Энэхүү хувиргалтын матрицыг ол.",
+options: [
+
+`<div style="display:flex;align-items:center;font-size:22px;">
+<span>(</span>
+<table style="border-collapse:collapse;margin:0 5px;">
+<tr><td style="padding:0 10px;">0</td><td style="padding:0 10px;">1</td></tr>
+<tr><td style="padding:0 10px;">-1</td><td style="padding:0 10px;">0</td></tr>
+</table>
+<span>)</span>
+</div>`,
+
+`<div style="display:flex;align-items:center;font-size:22px;">
+<span>(</span>
+<table style="border-collapse:collapse;margin:0 5px;">
+<tr><td style="padding:0 10px;">0</td><td style="padding:0 10px;">-1</td></tr>
+<tr><td style="padding:0 10px;">1</td><td style="padding:0 10px;">0</td></tr>
+</table>
+<span>)</span>
+</div>`,
+
+`<div style="display:flex;align-items:center;font-size:22px;">
+<span>(</span>
+<table style="border-collapse:collapse;margin:0 5px;">
+<tr><td style="padding:0 10px;">1</td><td style="padding:0 10px;">0</td></tr>
+<tr><td style="padding:0 10px;">0</td><td style="padding:0 10px;">1</td></tr>
+</table>
+<span>)</span>
+</div>`,
+
+`<div style="display:flex;align-items:center;font-size:22px;">
+<span>(</span>
+<table style="border-collapse:collapse;margin:0 5px;">
+<tr><td style="padding:0 10px;">-1</td><td style="padding:0 10px;">0</td></tr>
+<tr><td style="padding:0 10px;">0</td><td style="padding:0 10px;">-1</td></tr>
+</table>
+<span>)</span>
+</div>`
+
+],
+correct: 1
+},
+
+{ q: "9. A(2,-3) цэгт төвтэй М(5,1) цэгийг дайрсан тойргийн тэгшитгэл аль нь вэ?", options: ["\\(x^2+y^2=25\\)", "\\((x+2)^2+(y-3)^2=25\\)", "\\((x-2)^2+(y+3)^2=25\\)", "\\((x-5)^2+(y-1)^2=25\\)"], correct: 3 },
+
+{ q: "10. Кубын тал \\(\\sqrt{2}\\) см бол гадаргуугийн талбайг ол.", options: ["2", "\\(2\\sqrt2\\)", "6", "12"], correct: 3 },
+
+{ q: "11. \\(\\vec{x}=(5,2),\\ \\vec{y}=(a,3)\\) ба векторууд коллинеар бол \\(a\\)-ын утгыг ол.", options: ["-7.5", "7.5", "15", "-15"], correct: 0 },
+
+{ q: "12. \\( \\frac{x}{x^2+2xy+y^2} : \\frac{x}{x+y} - \\frac{xy}{y^2-x^2} = \\) Илэрхийллийг хялбарчил.", options: ["\\( \\frac{x+y}{x-y} \\)", "\\( \\frac{x-y}{x+y} \\)", "1", "\\( x-y \\)"], correct: 1 },
+
+{ q: "13. \\(4^x-33\\cdot2^x+32=0\\) тэгшитгэлийн шийдүүдийн нийлбэрийг ол.", options: ["5", "2", "-5", "0"], correct: 3 },
+
+{
+q: "14. Хэсэг сурагчаас шалгалт авсны дараа зөв гүйцэтгэсэн бодлогын тооны тархалтыг дараах хүснэгтээр үзүүлжээ. Нэг хүүхэд дунджаар хэдэн бодлого зөв бодсон бэ?",
+image: "images/q14_a.jpg",
+options: ["4.6", "4.7", "4.8", "4.9", "4.4"],
+correct: 4
+},
+
+{
+q: "15. cos90 =? ",
+options: ["0", "-1", "1", "0.5"],
+correct: 0
+}
+],
+
+creative: [
+{
+q: "2.1. M(-2;1) ба N(7;-4) цэгүүд өгөгдөв. a. MN хэрчмийн дундаж цэгийн координатыг ол. b.	Хоёр цэгийн хоорондох зайг ол. c. M(-2;1)\ ба N(7;-4) цэгүүдийг дайрсан шулууны налалтыг олоорой",
+expected: "(2.5,-1.5)\n \\(\\sqrt{106}\\)\n -5/9"
+},
+
+{
+q: "2.2. 60°-ын өнцөгт харгалзах секторын нумын урт 5 см бол: a) Секторын нийт хүрээний уртыг ол. b) Секторын талбайг ол.",
+expected: "\\(30/\\pi+5\\)\n \\(25\\pi/6\\)"
+},
+
+{
+q: "2.3. ABC гурвалжны BC=7 см, AC=0.5 дм, \\(\\angle C=60^\\circ\\) бол AB талын уртыг аравны орны нарийвчлалтай ол.",
+expected: "6.2"
+}
+]},
+
+B: {
+mcq: [
+
+{ q: "1. Хэрэв \\( \\cos40^\\circ =0.77 \\) бол \\( \\cos140^\\circ = ? \\)", options: ["-0.23", "0.77", "-0.64", "-0.77"], correct: 3 },
+
+{ q: "2. \\(230\\times3000\\) үржвэрийг стандарт дүрсэд оруулаарай.", options: ["\\(69\\times10^4\\)", "\\(9.6\\times10^5\\)", "\\(6.9\\times10^5\\)", "\\(0.69\\times10^6\\)"], correct: 2 },
+
+{ q: "3. \\(\\sqrt[4]{16x^4y^{13}}\\)= ?", options: ["\\(2xy\\sqrt[4]{y}\\)", "\\(-2xy\\sqrt[4]{y}\\)", "\\(-2xy^3\\sqrt y\\)", "\\(2xy^3\\sqrt[4]{y}\\)"], correct: 2 },
+
+{
+q: "4. Зурагт үзүүлсэн цэгийн олонлог аль тэнцэтгэл бишийн шийд болох вэ?",
+image: "images/q4_b.jpg",
+options: ["\\( y>-3x+1 \\)", "\\( y<3x-1 \\)", "\\( y=3x \\)", "\\( y\\ge3x \\)"],
+correct: 0
+},
+
+{ q: "5. 10а ангийн сурагчдын 70% эрэгтэй, 10б ангийн сурагчдын 80% эрэгтэй байв. Анги бүрээс нэг нэг сурагч сонгоход хоёул эмэгтэй байх магадлалыг ол.", options: ["0.56", "0.15", "0.06", "0.5"], correct: 2 },
+
+{ q: "6. 0;0;1;1;3;3;3;3;3;4;5;5;6;6;6 өгөгдлийн квартил хоорондын далайцыг ол.", options: ["3", "6", "4", "2"], correct: 0 },
+
+{
+q: "7. Дараах зургаас мэдэгдэхгүй байгаа өнцгийг олоорой.",
+image: "images/q7_b.jpg",
+options: ["40°", "80°", "20°", "90°"],
+correct: 1
+},
+
+{
+q: "8. P(-4,7) цэгийг координатын эхийн хувьд цагийн зүүний эсрэг 90° эргүүлэхэд P₁(-7,-4) болов. Энэхүү хувиргалтын матрицыг ол.",
+options: [
+
+`<div style="display:flex;align-items:center;font-size:22px;">
+<span>(</span>
+<table style="border-collapse:collapse;margin:0 5px;">
+<tr><td style="padding:0 10px;">0</td><td style="padding:0 10px;">-1</td></tr>
+<tr><td style="padding:0 10px;">1</td><td style="padding:0 10px;">0</td></tr>
+</table>
+<span>)</span>
+</div>`,
+
+`<div style="display:flex;align-items:center;font-size:22px;">
+<span>(</span>
+<table style="border-collapse:collapse;margin:0 5px;">
+<tr><td style="padding:0 10px;">0</td><td style="padding:0 10px;">1</td></tr>
+<tr><td style="padding:0 10px;">-1</td><td style="padding:0 10px;">0</td></tr>
+</table>
+<span>)</span>
+</div>`,
+
+`<div style="display:flex;align-items:center;font-size:22px;">
+<span>(</span>
+<table style="border-collapse:collapse;margin:0 5px;">
+<tr><td style="padding:0 10px;">1</td><td style="padding:0 10px;">0</td></tr>
+<tr><td style="padding:0 10px;">0</td><td style="padding:0 10px;">1</td></tr>
+</table>
+<span>)</span>
+</div>`,
+
+`<div style="display:flex;align-items:center;font-size:22px;">
+<span>(</span>
+<table style="border-collapse:collapse;margin:0 5px;">
+<tr><td style="padding:0 10px;">-1</td><td style="padding:0 10px;">0</td></tr>
+<tr><td style="padding:0 10px;">0</td><td style="padding:0 10px;">-1</td></tr>
+</table>
+<span>)</span>
+</div>`
+
+],
+correct: 2
+},
+
+{ q: "9. A(1,1) цэгт төвтэй M(5,4) цэгийг дайрсан тойргийн тэгшитгэл аль нь вэ?", options: ["\\(x^2+y^2=25\\)", "\\((x+1)^2+(y-1)^2=25\\)", "\\((x-1)^2+(y+1)^2=25\\)", "\\((x-1)^2+(y-1)^2=25\\)"], correct: 2 },
+
+{ q: "10. Кубын тал \\(\\sqrt3\\) см бол гадаргуугийн талбайг ол.", options: ["2", "\\(2\\sqrt2\\)", "6", "18"], correct: 3 },
+
+{ q: "11. \\(\\vec a(x,1),\\vec b(-2,-1),\\vec c(3,-2)\\) бол \\(\\vec a\\) ба \\(\\vec b+\\vec c\\) коллинеар байх x-ийг ол.", options: ["\\(-1/3\\)", "1", "-3", "0"], correct: 1 },
+
+{ q: "12. \\(\\frac{x^2}{x^2+2xy+y^2}:\\left(\\frac{x}{x+y}-\\frac{xy}{y^2-x^2}\\right)=\\)", options: ["\\(\\frac{x+y}{x-y}\\)", "\\(\\frac{x-y}{x+y}\\)", "1", "x-y"], correct: 0 },
+
+{ q: "13. \\(9^{3x}-10\\cdot3^{3x}+9=0\\) тэгшитгэлийн шийдүүдийн нийлбэрийг ол.", options: ["5", "\\(-\\frac23\\)", "-5", "\\(\\frac23\\)"], correct: 0 },
+
+{
+q: "14. Хүснэгтээс нэг хүүхэд дунджаар хэдэн бодлого зөв бодсоныг ол.",
+image: "images/q14_b.jpg",
+options: ["4.4", "4.7", "4.8", "4.9", "4.6"],
+correct: 0
+},
+
+{
+q: "15. sin90= ?",
+options: ["0", "1", "-1", "0.5"],
+correct: 1
+}
+
+],
+
+creative: [
+
+{
+q: "2.1. C(-3,-5) ба D(-6,-8) цэгүүд өгөгдөв. a. CD хэрчмийн дундаж цэгийн координатыг ол. \n b.Хоёр цэгийн хоорондох зайг ол. \n c)	C(-3;-5) ба D(-6;-8)  цэгүүдийг дайрсан шулууны налалтыг  олоорой.  ",
+expected: "(-4.5,-6.5)\n \\(3\\sqrt2\\)\n 1"
+},
+
+{
+q: "2.2. 30°-ын өнцөгт харгалзах секторын нумын урт 4 см бол тойргийн уртыг ол.",
+expected: "48"
+},
+
+{
+q: "2.3. AC=8 дм, BC=12 дм, \\(\\angle C=30^\\circ\\) бол ABC гурвалжны талбайг ол.",
+expected: "\\(24\\)"
+}
+
+]
+}
+};
+
+
+        let currentVariant = '';
+        let timerInterval;
+        let timeLeft = 40 * 60; // 40 минут
+        const userAnswersMCQ = {};
+        const userAnswersCreative = {};
+
+        function startQuiz() {
+            const name = document.getElementById('student-name').value.trim();
+            if (!name) {
+                alert("Өөрийн овог нэрийг оруулна уу!");
+                return;
+            }
+
+            document.getElementById('display-name').innerText = "Сурагч: " + name;
+            currentVariant = Math.random() < 0.5 ? 'A' : 'B';
+            document.getElementById('display-variant').innerText = "Хувилбар: " + currentVariant;
+
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('quiz-section').classList.remove('hidden');
+
+            renderQuestions();
+            startTimer();
+        }
+
+        function renderQuestions() {
+            // Сонгох даалгаврыг хэвлэх
+            const mcqContainer = document.getElementById('mcq-container');
+            const mcqQuestions = quizData[currentVariant].mcq;
+            
+            mcqContainer.innerHTML = mcqQuestions.map((q, qIdx) => `
+                <div class="mb-6 p-5 border rounded-lg bg-gray-50 shadow-sm hover:shadow-md transition">
+                    <p class="font-bold math-text mb-4 text-gray-800">${q.q}</p>
+                    
+                    ${q.image ? `<img src="${q.image}" alt="Бодлогын зураг" class="max-w-xs md:max-w-md my-4 rounded-lg shadow-sm border" onerror="imageError(this, '${q.image.split('/').pop()}')">` : ''}
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        ${q.options.map((opt, optIdx) => `
+                            <button onclick="selectMCQ(${qIdx}, ${optIdx})" 
+                                    id="mcq-${qIdx}-opt-${optIdx}"
+                                    class="mcq-btn-${qIdx} text-left p-3 border rounded-lg bg-white hover:bg-blue-50 transition math-text">
+                                <span class="font-semibold text-gray-500 mr-2">${String.fromCharCode(65 + optIdx)}.</span> ${opt}
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+
+            // Бүтээх даалгаврыг хэвлэх
+            const creativeContainer = document.getElementById('creative-container');
+            const creativeQuestions = quizData[currentVariant].creative;
+
+            creativeContainer.innerHTML = creativeQuestions.map((q, qIdx) => `
+                <div class="mb-6 p-5 border rounded-lg bg-gray-50 shadow-sm">
+                    <p class="font-bold math-text mb-3 text-gray-800">${q.q}</p>
+                    <textarea id="creative-${qIdx}" rows="4" 
+                              class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 font-mono text-sm"
+                              placeholder="Хариугаа энд бичнэ үү. Багш шалгаж оноо өгнө."
+                              onchange="saveCreativeAnswer(${qIdx}, this.value)"></textarea>
+                </div>
+            `).join('');
+
+            // Шинээр нэмэгдсэн HTML дэх MathJax томьёог уншуулж харуулах
+            if (window.MathJax) {
+                MathJax.typesetPromise();
+            }
+        }
+
+        function selectMCQ(qIdx, optIdx) {
+            const options = document.querySelectorAll(`.mcq-btn-${qIdx}`);
+            options.forEach(opt => {
+                opt.classList.remove('bg-blue-500', 'text-white', 'border-blue-700');
+                opt.classList.add('bg-white', 'text-black');
+            });
+            
+            const selected = document.getElementById(`mcq-${qIdx}-opt-${optIdx}`);
+            selected.classList.remove('bg-white', 'text-black');
+            selected.classList.add('bg-blue-500', 'text-white', 'border-blue-700');
+            
+            userAnswersMCQ[qIdx] = optIdx;
+        }
+
+        function saveCreativeAnswer(qIdx, value) {
+            userAnswersCreative[qIdx] = value;
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                let minutes = Math.floor(timeLeft / 60);
+                let seconds = timeLeft % 60;
+                document.getElementById('timer').innerText = 
+                    `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    finishQuiz();
+                }
+            }, 1000);
+        }
+
+        function confirmFinish() {
+            const mcqQuestions = quizData[currentVariant].mcq;
+            const answeredMCQCount = Object.keys(userAnswersMCQ).length;
+            
+            if (answeredMCQCount < mcqQuestions.length) {
+                if(!confirm(`Та сонгох тестийн ${mcqQuestions.length} асуултаас ${answeredMCQCount}-т нь хариулсан байна. Цаг дуусаагүй байхад шалгалтаа дуусгах уу?`)) {
+                    return;
+                }
+            }
+            finishQuiz();
+        }
+
+        function finishQuiz() {
+            clearInterval(timerInterval);
+            
+            // Оноо тооцох
+            let mcqScore = 0;
+            const mcqQuestions = quizData[currentVariant].mcq;
+            
+            mcqQuestions.forEach((q, idx) => {
+                if (userAnswersMCQ[idx] === q.correct) {
+                    mcqScore++;
+                }
+            });
+
+            document.getElementById('quiz-section').classList.add('hidden');
+            document.getElementById('result-section').classList.remove('hidden');
+            
+            const studentName = document.getElementById('student-name').value;
+            document.getElementById('result-student-name').innerText = `Сурагч: ${studentName} (Хувилбар: ${currentVariant})`;
+
+            const percent = Math.round((mcqScore / mcqQuestions.length) * 100);
+            document.getElementById('final-score').innerText = `${mcqScore} / ${mcqQuestions.length}`;
+            document.getElementById('score-details').innerText = `(${percent}%)`;
+
+            // Бүтээх даалгаврын тайлан
+            const creativeContainer = document.getElementById('creative-results-container');
+            const creativeQuestions = quizData[currentVariant].creative;
+            creativeContainer.innerHTML = '';
+
+            creativeQuestions.forEach((q, qIdx) => {
+                const studentAnswer = userAnswersCreative[qIdx] || "<i class='text-gray-400'>Хариу бичээгүй</i>";
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'p-5 border rounded-lg bg-gray-50';
+
+                const title = document.createElement('p');
+                title.className = 'font-bold math-text text-gray-800 mb-3';
+                title.textContent = q.q;
+                wrapper.appendChild(title);
+
+                const answerBlock = document.createElement('div');
+                answerBlock.className = 'mb-4';
+                const answerLabel = document.createElement('span');
+                answerLabel.className = 'text-sm font-semibold text-gray-500 uppercase';
+                answerLabel.textContent = 'Таны бичсэн бодолт:';
+                answerBlock.appendChild(answerLabel);
+
+                const answerContent = document.createElement('div');
+                answerContent.className = 'mt-1 p-3 bg-white border rounded-md whitespace-pre-wrap font-mono text-sm';
+                answerContent.innerHTML = studentAnswer;
+                answerBlock.appendChild(answerContent);
+
+                wrapper.appendChild(answerBlock);
+
+                const revealBlock = document.createElement('div');
+                revealBlock.className = 'mt-4 pt-4 border-t border-dashed';
+
+                const btn = document.createElement('button');
+                btn.className = 'text-blue-600 hover:text-blue-800 font-semibold text-sm flex items-center';
+                btn.type = 'button';
+                btn.setAttribute('aria-expanded', 'false');
+                btn.innerHTML = 'Зөв бодолт харах <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>';
+                btn.addEventListener('click', () => toggleAnswer('expected-' + qIdx));
+                revealBlock.appendChild(btn);
+
+                const expectedDiv = document.createElement('div');
+                expectedDiv.id = 'expected-' + qIdx;
+                expectedDiv.className = 'hidden mt-3 p-4 bg-green-50 border border-green-200 text-green-900 rounded-md whitespace-pre-wrap text-sm';
+                expectedDiv.innerHTML = q.expected;
+                revealBlock.appendChild(expectedDiv);
+
+                wrapper.appendChild(revealBlock);
+
+                creativeContainer.appendChild(wrapper);
+            });
+
+            // Тайлангийн хэсэг дэх MathJax дахин уншуулах
+            if (window.MathJax) {
+                MathJax.typesetPromise();
+            }
+        }
+
+        function toggleAnswer(id) {
+            const el = document.getElementById(id);
+            if (el.classList.contains('hidden')) {
+                el.classList.remove('hidden');
+            } else {
+                el.classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
